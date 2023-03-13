@@ -50,8 +50,6 @@ import org.springframework.stereotype.Service;
 /**
  * 帖子服务实现
  *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
- * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
 @Service
 @Slf4j
@@ -115,7 +113,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         Long notId = postQueryRequest.getNotId();
         // 拼接查询条件
         if (StringUtils.isNotBlank(searchText)) {
-            queryWrapper.like("title", title).or().like("content", content);
+            queryWrapper.like("title", searchText).or().like("content", content);
         }
         queryWrapper.like(StringUtils.isNotBlank(title), "title", title);
         queryWrapper.like(StringUtils.isNotBlank(content), "content", content);
@@ -307,6 +305,18 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         }).collect(Collectors.toList());
         postVOPage.setRecords(postVOList);
         return postVOPage;
+    }
+
+    @Override
+    public Page<PostVO> listPostByPage(PostQueryRequest postQueryRequest, HttpServletRequest request) {
+
+        long current = postQueryRequest.getCurrent();
+        long size = postQueryRequest.getPageSize();
+        // 限制爬虫
+        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        Page<Post> postPage = this.page(new Page<>(current, size),
+                this.getQueryWrapper(postQueryRequest));
+        return this.getPostVOPage(postPage, request);
     }
 
 }

@@ -4,10 +4,12 @@ import static com.yupi.yuso.constant.UserConstant.USER_LOGIN_STATE;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yupi.yuso.common.ErrorCode;
 import com.yupi.yuso.constant.CommonConstant;
 import com.yupi.yuso.exception.BusinessException;
+import com.yupi.yuso.exception.ThrowUtils;
 import com.yupi.yuso.mapper.UserMapper;
 import com.yupi.yuso.model.dto.user.UserQueryRequest;
 import com.yupi.yuso.model.entity.User;
@@ -30,8 +32,6 @@ import org.springframework.util.DigestUtils;
 /**
  * 用户服务实现
  *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
- * @from <a href="https://yupi.icu">编程导航知识星球</a>
  */
 @Service
 @Slf4j
@@ -268,5 +268,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         queryWrapper.orderBy(SqlUtils.validSortField(sortField), sortOrder.equals(CommonConstant.SORT_ORDER_ASC),
                 sortField);
         return queryWrapper;
+    }
+
+    @Override
+    public Page<UserVO> listUserByPage(UserQueryRequest userQueryRequest) {
+        long size = userQueryRequest.getPageSize();
+        long current = userQueryRequest.getCurrent();
+        // 限制爬虫
+        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        Page<User> userPage = this.page(new Page<>(current, size),
+                this.getQueryWrapper(userQueryRequest));
+        Page<UserVO> userVOPage = new Page<>(current, size, userPage.getTotal());
+        List<UserVO> userVO = this.getUserVO(userPage.getRecords());
+        userVOPage.setRecords(userVO);
+        return userVOPage;
     }
 }
