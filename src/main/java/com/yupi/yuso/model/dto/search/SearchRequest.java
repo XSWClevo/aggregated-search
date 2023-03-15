@@ -1,5 +1,6 @@
 package com.yupi.yuso.model.dto.search;
 
+import com.yupi.yuso.common.PageRequest;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -9,7 +10,7 @@ public class SearchRequest implements Serializable {
 
     private String searchText;
 
-    private Integer current;
+    private Integer pageNum;
 
     private Integer pageSize;
 

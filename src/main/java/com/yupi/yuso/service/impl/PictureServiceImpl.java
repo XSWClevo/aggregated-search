@@ -1,5 +1,6 @@
 package com.yupi.yuso.service.impl;
 
+import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -8,6 +9,7 @@ import com.yupi.yuso.exception.BusinessException;
 import com.yupi.yuso.exception.ThrowUtils;
 import com.yupi.yuso.model.entity.Picture;
 import com.yupi.yuso.service.PictureService;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -19,13 +21,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class PictureServiceImpl implements PictureService {
     @Override
     public Page<Picture> searchPicture(long pageIndex, long pageSize, String searchText) {
         ThrowUtils.throwIf(StrUtil.isBlank(searchText), ErrorCode.PARAMS_ERROR);
-        long current = (pageIndex - 1) * pageSize;
-        String url = String.format("https://cn.bing.com/images/search?q=%s&first=%d", searchText, current);
+        // long current = (pageIndex - 1) * pageSize;
+        String url = String.format("https://cn.bing.com/images/search?q=%s&first=%d", searchText, pageIndex);
+        log.info("搜索URL为：{}", url);
         Document doc;
         try {
             doc = Jsoup.connect(url).get();
@@ -36,7 +40,14 @@ public class PictureServiceImpl implements PictureService {
         List<Picture> pictureList = new ArrayList<>();
         for (Element element : newsHeadlines) {
             String m = element.select(".iusc").get(0).attr("m");
-            String title = element.select(".inflnk").get(0).attr("aria-label");
+            Elements select = element.select(".inflnk");
+            if (ObjUtil.isEmpty(select)) {
+                continue;
+            }
+            String title = select.get(0).attr("aria-label");
+            if (StrUtil.isBlank(title)) {
+                continue;
+            }
             Map map = JSONUtil.toBean(m, Map.class);
             String murl = (String) map.get("murl");
 

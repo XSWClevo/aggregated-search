@@ -1,5 +1,6 @@
 package com.yupi.yuso.service.impl;
 
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yupi.yuso.common.ErrorCode;
 import com.yupi.yuso.exception.BusinessException;
@@ -37,10 +38,13 @@ public class SearchServiceImpl implements SearchService {
 
     @Override
     public SearchVO search(SearchRequest searchRequest, HttpServletRequest request) {
+        log.info("查询参数为：{}", JSONUtil.toJsonStr(searchRequest));
         String searchText = searchRequest.getSearchText();
-        Integer current = searchRequest.getCurrent();
+        Integer current = searchRequest.getPageNum();
         Integer pageSize = searchRequest.getPageSize();
-        CompletableFuture<Page<Picture>> pictureFuture = CompletableFuture.supplyAsync(() -> pictureService.searchPicture(current, pageSize, searchText));
+        CompletableFuture<Page<Picture>> pictureFuture = CompletableFuture.supplyAsync(
+                () -> pictureService.searchPicture(current, pageSize, searchText)
+        );
 
         CompletableFuture<Page<UserVO>> userVOFuture = CompletableFuture.supplyAsync(() -> {
             UserQueryRequest userQueryRequest = new UserQueryRequest();

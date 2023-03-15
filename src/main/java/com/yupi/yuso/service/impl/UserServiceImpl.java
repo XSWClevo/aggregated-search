@@ -275,7 +275,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         long size = userQueryRequest.getPageSize();
         long current = userQueryRequest.getCurrent();
         // 限制爬虫
-        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        // ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         Page<User> userPage = this.page(new Page<>(current, size),
                 this.getQueryWrapper(userQueryRequest));
         Page<UserVO> userVOPage = new Page<>(current, size, userPage.getTotal());
