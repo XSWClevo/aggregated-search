@@ -1,6 +1,5 @@
 package com.yupi.yuso.model.dto.search;
 
-import com.yupi.yuso.common.PageRequest;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -13,6 +12,15 @@ public class SearchRequest implements Serializable {
     private Integer pageNum;
 
     private Integer pageSize;
+
+    /**
+     * <ul>
+     *     <li>post</li>
+     *     <li>picture</li>
+     *     <li>user</li>
+     * </ul>
+     */
+    private String type;
 
     private static final long serialVersionUID = 1L;
 

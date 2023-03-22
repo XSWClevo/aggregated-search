@@ -1,0 +1,40 @@
+{
+  "method": "POST",
+  "url": "https://api.openai.com/v1/chat/completions",
+  "data": {
+    "model": "gpt-3.5-turbo",
+    "messages": [
+      {
+        "role": "user",
+        "content": "asdad"
+      }
+    ]
+  },
+  "timeout": 60000,
+  "headers": {
+    "Authorization": "Bearer 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"
+  }
+}
+,
+
+{
+  "created": 1679306511,
+  "usage": {
+    "completion_tokens": 31,
+    "prompt_tokens": 9,
+    "total_tokens": 40
+  },
+  "model": "gpt-3.5-turbo-0301",
+  "id": "chatcmpl-6w6cpyUcB5fvelScpVRbhCI4wSnbF",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "\n\nI'm sorry, I do not understand your request. Can you please provide more context or information so that I may better assist you? Thank you."
+      }
+    }
+  ],
+  "object": "chat.completion"
+}

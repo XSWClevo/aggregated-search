@@ -20,4 +20,13 @@ public class SearchVO implements Serializable {
 
     private List<PostVO> postList;
 
+    private List<?> dataList;
+
+    private String type;
+
+    public SearchVO(List<Picture> pictureList, List<UserVO> userList, List<PostVO> postList) {
+        this.pictureList = pictureList;
+        this.userList = userList;
+        this.postList = postList;
+    }
 }
