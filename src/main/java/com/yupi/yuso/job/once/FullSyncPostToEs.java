@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 /**
  * 全量同步帖子到 es
  */
-@Component
+//@Component
 @Slf4j
 public class FullSyncPostToEs implements CommandLineRunner {
 
