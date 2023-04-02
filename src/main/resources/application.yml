@@ -87,3 +87,31 @@ cos:
     secretKey: xxx
     region: xxx
     bucket: xxx
+canal:
+  server: 192.168.11.110:11111  #你canal的地址
+  destination: example
+#canal.conf:
+#  canalServerHost: 127.0.0.1:11111
+#  batchSize: 500
+#  syncBatchSize: 1000
+#  retries: 0
+#  timeout:
+#  mode: tcp
+#  srcDataSources:
+#    defaultDS:
+#      url: jdbc:mysql://127.0.0.1:3306/my_db?useUnicode=true
+#      username: root
+#      password: 123456
+#  canalAdapters:
+#    - instance: example
+#      groups:
+#        - groupId: g1
+#          outerAdapters:
+#            -
+#              key: exampleKey
+#              name: es7                           # or es7
+#              hosts: 127.0.0.1:9200               # es 集群地址, 逗号分隔
+#              properties:
+#                mode: transport # transport or rest         # 可指定transport模式或者rest模式
+#                # security.auth: test:123456      # only used for rest mode
+#                cluster.name: elasticsearch       # es cluster name

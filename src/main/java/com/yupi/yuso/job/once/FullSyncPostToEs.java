@@ -1,23 +1,18 @@
 package com.yupi.yuso.job.once;
 
-import cn.hutool.http.HttpRequest;
-import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import com.yupi.yuso.esdao.PostEsDao;
 import com.yupi.yuso.model.dto.post.PostEsDTO;
 import com.yupi.yuso.model.entity.Post;
 import com.yupi.yuso.service.PostService;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import javax.annotation.Resource;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 全量同步帖子到 es
