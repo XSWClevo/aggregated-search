@@ -23,12 +23,22 @@ spring:
     password: 123456
   # Redis 配置
   # todo 需替换配置，然后取消注释
-#  redis:
-#    database: 1
-#    host: localhost
-#    port: 6379
-#    timeout: 5000
-#    password: 123456
+  redis:
+    database: 1
+    host: 127.0.0.1
+    port: 6379
+    timeout: 2000ms
+    password:
+    lettuce:
+      pool:
+        # 连接池中的最小空闲连接
+        min-idle: 0
+        # 连接池中的最大空闲连接
+        max-idle: 5
+        # 连接池的最大数据库连接数
+        max-active: 5
+        # #连接池最大阻塞等待时间（使用负值表示没有限制）
+        max-wait: -1
   # Elasticsearch 配置
   # todo 需替换配置，然后取消注释
 #  elasticsearch:
@@ -87,31 +97,38 @@ cos:
     secretKey: xxx
     region: xxx
     bucket: xxx
-canal:
-  server: 192.168.11.110:11111  #你canal的地址
-  destination: example
-#canal.conf:
-#  canalServerHost: 127.0.0.1:11111
-#  batchSize: 500
-#  syncBatchSize: 1000
-#  retries: 0
-#  timeout:
-#  mode: tcp
-#  srcDataSources:
-#    defaultDS:
-#      url: jdbc:mysql://127.0.0.1:3306/my_db?useUnicode=true
-#      username: root
-#      password: 123456
-#  canalAdapters:
-#    - instance: example
-#      groups:
-#        - groupId: g1
-#          outerAdapters:
-#            -
-#              key: exampleKey
-#              name: es7                           # or es7
-#              hosts: 127.0.0.1:9200               # es 集群地址, 逗号分隔
-#              properties:
-#                mode: transport # transport or rest         # 可指定transport模式或者rest模式
-#                # security.auth: test:123456      # only used for rest mode
-#                cluster.name: elasticsearch       # es cluster name
+#canal:
+#  server: 192.168.11.110:11111  #你canal的地址
+#  destination: example
+canal.conf:
+  canalServerHost: 127.0.0.1:11111
+  batchSize: 500
+  syncBatchSize: 1000
+  retries: 0
+  timeout:
+  mode: tcp
+  consumerProperties:
+    # 配置canal 地址 把127.0.0.1换成自己的
+    canal.tcp.server.host: 127.0.0.1:11111
+    canal.tcp.zookeeper.hosts:
+    canal.tcp.batch.size: 500
+    canal.tcp.username:
+    canal.tcp.password:
+  srcDataSources:
+    defaultDS:
+      url: jdbc:mysql://127.0.0.1:3306/my_db?serverTimezone=GMT%2B8&useUnicode=true&characterEncoding=utf8&useSSL=false&allowMultiQueries=true
+      username: root
+      password: 123456
+  canalAdapters:
+    - instance: example
+      groups:
+        - groupId: g1
+          outerAdapters:
+            - name: logger
+            - name: es7                           # or es7
+              key: exampleKey
+              hosts: http://127.0.0.1:9200                # es 集群地址, 逗号分隔
+              properties:
+                mode: rest # transport or rest         # 可指定transport模式或者rest模式
+                # security.auth: test:123456      # only used for rest mode
+                cluster.name: elasticsearch       # es cluster name

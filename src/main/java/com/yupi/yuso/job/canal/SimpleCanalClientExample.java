@@ -1,33 +1,53 @@
 package com.yupi.yuso.job.canal;
 
-import java.net.InetSocketAddress;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.alibaba.otter.canal.client.CanalConnectors;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.otter.canal.client.CanalConnector;
+import com.alibaba.otter.canal.client.CanalConnectors;
+import com.alibaba.otter.canal.protocol.CanalEntry.*;
 import com.alibaba.otter.canal.protocol.Message;
-import com.alibaba.otter.canal.protocol.CanalEntry.Column;
-import com.alibaba.otter.canal.protocol.CanalEntry.Entry;
-import com.alibaba.otter.canal.protocol.CanalEntry.EntryType;
-import com.alibaba.otter.canal.protocol.CanalEntry.EventType;
-import com.alibaba.otter.canal.protocol.CanalEntry.RowChange;
-import com.alibaba.otter.canal.protocol.CanalEntry.RowData;
+import com.yupi.yuso.esdao.PostEsDao;
+import com.yupi.yuso.model.dto.post.PostEsDTO;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
+@Order(value = 1)
 @Component
-public class SimpleCanalClientExample {
+public class SimpleCanalClientExample implements CommandLineRunner {
+
+    @Resource
+    private PostEsDao postEsDao;
+
     // 创建链接
+    private static final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(1, 2, 1L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(100));
+    /**
+     * - instance: example
+     * 数据库账号密码
+     */
     private static final CanalConnector connector = CanalConnectors.newSingleConnector(new InetSocketAddress("127.0.0.1",
             11111), "example", "root", "123456");
 
-    @PostConstruct
-    public void run() throws Exception {
-
+    @Order(value = 2)
+    @Override
+    public void run(String... args) throws Exception {
+        log.info("执行Canal监控方法");
         int batchSize = 1000;
         AtomicInteger emptyCount = new AtomicInteger(0);
         try {
@@ -35,80 +55,95 @@ public class SimpleCanalClientExample {
             connector.subscribe(".*\\..*");
             connector.rollback();
             int totalEmptyCount = 200;
-            new Thread(() -> {
-                while (emptyCount.get() < totalEmptyCount) {
-                    try {
-                        Thread.sleep(20000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+            while (emptyCount.get() < totalEmptyCount) {
+                CountDownLatch countDownLatch = new CountDownLatch(1);
+                threadPoolExecutor.execute(() -> {
                     Message message = connector.getWithoutAck(batchSize); // 获取指定数量的数据
                     long batchId = message.getId();
                     int size = message.getEntries().size();
                     if (batchId == -1 || size == 0) {
                         emptyCount.getAndAdd(1);
-                        System.out.println("empty count : " + emptyCount.get());
+                        // System.out.println("empty count : " + emptyCount.get());
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                     } else {
+                        // 有数据库信息改变就重置计数
                         emptyCount.set(0);
-                        // System.out.printf("message[batchId=%s,size=%s] \n", batchId, size);
                         printEntry(message.getEntries());
                     }
 
                     connector.ack(batchId); // 提交确认
                     // connector.rollback(batchId); // 处理失败, 回滚数据
+                    countDownLatch.countDown();
+                });
+                try {
+                    countDownLatch.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            }).start();
-
-        } catch (Exception e) {
+            }
         } finally {
             connector.disconnect();
         }
     }
 
-    private static void printEntry(List<Entry> entrys) {
-        for (Entry entry : entrys) {
-            if (entry.getEntryType() == EntryType.TRANSACTIONBEGIN || entry.getEntryType() == EntryType.TRANSACTIONEND) {
+    private void printEntry(List<Entry> list) {
+        for (Entry entry : list) {
+            if (entry.getEntryType() == EntryType.TRANSACTIONBEGIN
+                    || entry.getEntryType() == EntryType.TRANSACTIONEND) {
                 continue;
             }
 
-            RowChange rowChage = null;
+            RowChange rowChange;
             try {
-                rowChage = RowChange.parseFrom(entry.getStoreValue());
+                rowChange = RowChange.parseFrom(entry.getStoreValue());
             } catch (Exception e) {
                 throw new RuntimeException("ERROR ## parser of eromanga-event has an error , data:" + entry.toString(),
                         e);
             }
 
-            EventType eventType = rowChage.getEventType();
+            EventType eventType = rowChange.getEventType();
             log.info(String.format("================&gt; binlog[%s:%s] , name[%s,%s] , eventType : %s",
                     entry.getHeader().getLogfileName(), entry.getHeader().getLogfileOffset(),
                     entry.getHeader().getSchemaName(), entry.getHeader().getTableName(),
                     eventType));
-
-            for (RowData rowData : rowChage.getRowDatasList()) {
+            // 处理insert、update、delete操作
+            List<PostEsDTO> postEsDTOList = new ArrayList<>();
+            for (RowData rowData : rowChange.getRowDatasList()) {
+                PostEsDTO postEsDTO = null;
                 if (eventType == EventType.DELETE) {
                     printColumn(rowData.getBeforeColumnsList());
                 } else if (eventType == EventType.INSERT) {
-                    printColumn(rowData.getAfterColumnsList());
+                    log.info("es 执行insert方法");
+                    postEsDTO = printColumn(rowData.getAfterColumnsList());
                 } else {
                     log.info("-------&gt; before");
                     printColumn(rowData.getBeforeColumnsList());
                     log.info("-------&gt; after");
                     printColumn(rowData.getAfterColumnsList());
                 }
+                if (ObjectUtil.isNotEmpty(postEsDTO)) {
+                    postEsDTOList.add(postEsDTO);
+                }
+            }
+            if (CollUtil.isNotEmpty(postEsDTOList)) {
+                postEsDao.saveAll(postEsDTOList);
             }
         }
     }
 
-    private static void printColumn(List<Column> columns) {
+    private PostEsDTO printColumn(List<Column> columns) {
+        Map<String, Object> data = new HashMap<>();
         for (Column column : columns) {
+            data.put(column.getName(), column.getValue());
             log.info(column.getName() + " : " + column.getValue() + "    update=" + column.getUpdated());
         }
-    }
+        PostEsDTO postEsDTO = JSONObject.parseObject(JSONObject.toJSONString(data), PostEsDTO.class);
+        // postEsDTO = MapToBeanUtils.mapToBean(data, PostEsDTO.class);
 
+        return postEsDTO;
+    }
 }
