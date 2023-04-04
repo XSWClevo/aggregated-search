@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yupi.yuso.common.ErrorCode;
 import com.yupi.yuso.exception.BusinessException;
 import com.yupi.yuso.model.dto.post.PostQueryRequest;
+import com.yupi.yuso.model.entity.Post;
 import com.yupi.yuso.model.vo.PostVO;
 import com.yupi.yuso.service.PostService;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ public class PostDataSource implements AggDataSource<PostVO> {
         postQueryRequest.setCurrent(pageNum);
         postQueryRequest.setPageSize(pageSize);
 
-        return postService.listPostByPage(postQueryRequest, request);
+        Page<Post> postPage = postService.searchFromEs(postQueryRequest);
+        return postService.getPostVOPage(postPage, request);
     }
 }

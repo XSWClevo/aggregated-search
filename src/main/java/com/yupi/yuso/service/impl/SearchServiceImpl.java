@@ -7,11 +7,11 @@ import com.yupi.yuso.common.ErrorCode;
 import com.yupi.yuso.datasource.AggDataSource;
 import com.yupi.yuso.datasource.DataSourceRegistry;
 import com.yupi.yuso.exception.BusinessException;
-import com.yupi.yuso.exception.ThrowUtils;
 import com.yupi.yuso.model.dto.post.PostQueryRequest;
 import com.yupi.yuso.model.dto.search.SearchRequest;
 import com.yupi.yuso.model.dto.user.UserQueryRequest;
 import com.yupi.yuso.model.entity.Picture;
+import com.yupi.yuso.model.entity.Post;
 import com.yupi.yuso.model.enums.SearchTypeEnum;
 import com.yupi.yuso.model.vo.PostVO;
 import com.yupi.yuso.model.vo.SearchVO;
@@ -71,7 +71,9 @@ public class SearchServiceImpl implements SearchService {
                 postQueryRequest.setSearchText(searchText);
                 postQueryRequest.setCurrent(current);
                 postQueryRequest.setPageSize(pageSize);
-                return postService.listPostByPage(postQueryRequest, request);
+                Page<Post> postPage = postService.searchFromEs(postQueryRequest);
+                return postService.getPostVOPage(postPage, request);
+                // return postService.listPostByPage(postQueryRequest, request);
             });
             // 等待所有任务执行完毕
             CompletableFuture.allOf(pictureFuture, userVOFuture, postVOFuture).join();

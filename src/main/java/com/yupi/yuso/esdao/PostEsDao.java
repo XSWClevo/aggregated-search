@@ -1,9 +1,9 @@
 package com.yupi.yuso.esdao;
 
 import com.yupi.yuso.model.dto.post.PostEsDTO;
-import java.util.List;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
-import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * 帖子 ES 操作
