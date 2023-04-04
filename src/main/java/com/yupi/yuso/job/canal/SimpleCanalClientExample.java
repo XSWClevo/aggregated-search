@@ -10,7 +10,6 @@ import com.alibaba.otter.canal.protocol.Message;
 import com.yupi.yuso.esdao.PostEsDao;
 import com.yupi.yuso.model.dto.post.PostEsDTO;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -46,15 +45,19 @@ public class SimpleCanalClientExample implements CommandLineRunner {
 
     @Order(value = 2)
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         log.info("执行Canal监控方法");
         int batchSize = 1000;
         AtomicInteger emptyCount = new AtomicInteger(0);
         try {
             connector.connect();
-            connector.subscribe(".*\\..*");
+            // connector.subscribe(".*\\..*");
+            // 多表、多库
+            // connector.subscribe("test\\..*,test2.user1,test3.user2");
+            // 由于instance.properties 文件以设置正则，所以这里可以为空
+            connector.subscribe();
             connector.rollback();
-            int totalEmptyCount = 200;
+            int totalEmptyCount = 1000;
             while (emptyCount.get() < totalEmptyCount) {
                 CountDownLatch countDownLatch = new CountDownLatch(1);
                 threadPoolExecutor.execute(() -> {
@@ -141,9 +144,7 @@ public class SimpleCanalClientExample implements CommandLineRunner {
             data.put(column.getName(), column.getValue());
             log.info(column.getName() + " : " + column.getValue() + "    update=" + column.getUpdated());
         }
-        PostEsDTO postEsDTO = JSONObject.parseObject(JSONObject.toJSONString(data), PostEsDTO.class);
         // postEsDTO = MapToBeanUtils.mapToBean(data, PostEsDTO.class);
-
-        return postEsDTO;
+        return JSONObject.parseObject(JSONObject.toJSONString(data), PostEsDTO.class);
     }
 }
