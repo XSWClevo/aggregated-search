@@ -12,7 +12,6 @@ import com.yupi.yuso.model.dto.post.PostEsDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.net.InetSocketAddress;
@@ -28,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Order(value = 1)
-@Component
+//@Component
 public class SimpleCanalClientExample implements CommandLineRunner {
 
     @Resource
@@ -36,8 +35,9 @@ public class SimpleCanalClientExample implements CommandLineRunner {
 
     // 创建链接
     private static final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(1, 2, 1L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(100));
+    
     /**
-     * - instance: example
+     * 取instance.properties里面配置中的 - instance: example
      * 数据库账号密码
      */
     private static final CanalConnector connector = CanalConnectors.newSingleConnector(new InetSocketAddress("127.0.0.1",

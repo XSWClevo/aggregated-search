@@ -92,7 +92,7 @@ public class RateLimitAspect {
         key.append(className)
                 .append("-")
                 .append(methodName);
-        System.out.println("全类名+方法名 " + className + "-" + methodName);
+        logger.info("全类名+方法名 {} - {}", className, methodName);
         return key.toString();
     }
 }
